@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChessTraveler — Viaggia per gli scacchi</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:#1a1a18; --dark:#2c2c2a; --mid:#4a4a46; --muted:#888780;
+  --light:#d3d1c7; --pale:#f1efe8; --white:#fafaf7;
+  --gold:#c8a84b; --gold-light:#e8d49a; --gold-pale:#fdf8ee;
+  --green:#3b6d11; --green-pale:#eaf3de;
+  --blue:#185fa5; --blue-pale:#e6f1fb;
+  --red:#a32d2d; --red-pale:#fcebeb;
+  --teal:#1a6b6b; --teal-pale:#e2f3f3;
+  --r:10px; --rs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);min-height:100vh}
+.page{display:none}.page.active{display:block}
+button{cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:200;background:var(--black);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:58px;border-bottom:1px solid #2e2e2c}
+.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none}
+.nav-links{display:flex;gap:3px}
+.nav-link{font-size:13px;color:var(--light);padding:6px 15px;border-radius:var(--rs);cursor:pointer;transition:all .15s;border:1px solid transparent}
+.nav-link:hover{color:var(--white);background:rgba(255,255,255,.06)}
+.nav-link.active{color:var(--gold);border-color:rgba(200,168,75,.3);background:rgba(200,168,75,.07)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.elo-pill{font-size:12px;color:var(--gold-light);background:rgba(200,168,75,.12);padding:4px 12px;border-radius:20px;border:1px solid rgba(200,168,75,.25)}
+.av-nav{width:32px;height:32px;border-radius:50%;background:var(--gold);color:var(--black);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;cursor:pointer}
+
+/* HERO */
+.hero{background:var(--black);padding:52px 32px 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(200,168,75,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(200,168,75,.03) 1px,transparent 1px);background-size:52px 52px;pointer-events:none}
+.hero-inner{position:relative;max-width:880px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:14px}
+.hero h1{font-family:'Playfair Display',serif;font-size:44px;font-weight:700;line-height:1.12;color:var(--white);margin-bottom:12px}
+.hero h1 em{font-style:italic;color:var(--gold)}
+.hero-sub{font-size:15px;color:var(--light);font-weight:300;margin-bottom:32px;max-width:540px;line-height:1.6}
+.search-box{background:var(--white);border-radius:var(--r);padding:20px 22px;display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:14px;align-items:end;box-shadow:0 8px 40px rgba(0,0,0,.45)}
+.field label{display:block;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px}
+.field input,.field select{width:100%;padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;border:1px solid var(--light);border-radius:var(--rs);background:var(--white);color:var(--dark);transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--gold)}
+.btn-search{padding:10px 26px;background:var(--gold);color:var(--black);font-size:14px;font-weight:500;border:none;border-radius:var(--rs);transition:all .15s;white-space:nowrap}
+.btn-search:hover{background:#b8942e}
+.chips{display:flex;gap:7px;margin-top:18px;flex-wrap:wrap}
+.chip{font-size:12px;padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);color:var(--light);cursor:pointer;transition:all .15s;user-select:none}
+.chip:hover{border-color:var(--gold);color:var(--gold)}
+.chip.on{background:rgba(200,168,75,.15);border-color:var(--gold);color:var(--gold-light)}
+.stats-row{max-width:880px;margin:0 auto;padding-top:28px;display:flex;gap:44px}
+.stat-num{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold)}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* TOURNAMENT LAYOUT */
+.t-layout{display:grid;grid-template-columns:330px 1fr}
+.t-list{border-right:1px solid var(--pale)}
+.t-list-hdr{padding:14px 18px;border-bottom:1px solid var(--pale);display:flex;justify-content:space-between;align-items:center}
+.t-count{font-size:12px;color:var(--muted)}
+.t-sort{font-size:12px;color:var(--mid);border:1px solid var(--light);padding:3px 10px;border-radius:var(--rs);background:var(--white);font-family:'DM Sans',sans-serif}
+.t-scroll{overflow-y:auto;max-height:calc(100vh - 58px - 272px - 53px)}
+.tc{padding:13px 18px;border-bottom:1px solid var(--pale);cursor:pointer;transition:background .1s;border-left:3px solid transparent}
+.tc:hover{background:var(--pale)}
+.tc.sel{background:#fdf8ee;border-left-color:var(--gold)}
+.tc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.tc-name{font-size:13px;font-weight:500;color:var(--dark);line-height:1.3}
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;white-space:nowrap;flex-shrink:0;margin-left:7px}
+.bf{background:var(--blue-pale);color:var(--blue)}
+.bo{background:var(--green-pale);color:var(--green)}
+.br{background:var(--gold-pale);color:#7a5c00}
+.bp{background:#fbeaf0;color:#993556}
+.tc-meta{font-size:12px;color:var(--muted);line-height:1.6}
+.tc-prize{font-size:12px;font-weight:500;color:var(--green);margin-top:2px}
+.tc-budget{font-size:11px;color:var(--teal);margin-top:1px}
+.lowcost-tag{font-size:10px;background:var(--teal-pale);color:var(--teal);padding:1px 7px;border-radius:8px;display:inline-block;margin-left:4px}
+
+/* DETAIL */
+.dp{padding:26px 30px;overflow-y:auto;max-height:calc(100vh - 58px - 272px)}
+.dp-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--dark);margin-bottom:3px}
+.dp-loc{font-size:13px;color:var(--muted);margin-bottom:12px}
+.dp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.btn{font-size:12px;font-weight:500;padding:7px 15px;border-radius:var(--rs);border:1px solid var(--light);background:var(--white);color:var(--dark);transition:all .15s}
+.btn:hover{border-color:var(--mid);background:var(--pale)}
+.btn-gold{background:var(--gold);color:var(--black);border-color:var(--gold)}
+.btn-gold:hover{background:#b8942e;border-color:#b8942e}
+.btn-dark{background:var(--dark);color:var(--white);border-color:var(--dark)}
+.btn-dark:hover{background:var(--black)}
+.btn-teal{background:var(--teal);color:var(--white);border-color:var(--teal)}
+.btn-teal:hover{background:#155858}
+.dp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.icard{padding:14px 16px;border:1px solid var(--pale);border-radius:var(--r)}
+.ic-tit{font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:500;color:var(--muted);margin-bottom:10px}
+.ic-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--mid);border-bottom:1px solid var(--pale)}
+.ic-row:last-child{border-bottom:none}
+.ic-row strong{color:var(--dark);font-weight:500}
+.ic-total{display:flex;justify-content:space-between;font-size:14px;padding:8px 0 0;margin-top:4px;font-weight:500;border-top:1px solid var(--light)}
+.sec-tit{font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:500;color:var(--muted);margin-bottom:10px}
+.travel-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}
+.tcard{padding:11px;border:1px solid var(--pale);border-radius:var(--r);text-align:center;transition:all .15s;cursor:default}
+.tcard.best{border-color:var(--gold);background:var(--gold-pale)}
+.t-icon{font-size:20px;margin-bottom:5px}
+.t-type{font-size:12px;font-weight:500;color:var(--dark)}
+.t-info{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+.t-best-tag{font-size:10px;background:var(--gold);color:var(--black);padding:1px 7px;border-radius:8px;display:inline-block;margin-top:4px}
+.poi-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.poi{font-size:12px;padding:4px 11px;border-radius:20px;border:1px solid var(--pale);color:var(--mid);transition:all .15s;cursor:default}
+.poi:hover{border-color:var(--light);color:var(--dark)}
+.cd-bar{background:var(--gold-pale);border:1px solid var(--gold-light);border-radius:var(--r);padding:11px 15px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.cd-days{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);font-weight:700}
+.gf{background:var(--pale);border-radius:var(--r);padding:13px 17px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.av-row{display:flex}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;border:2px solid var(--white);margin-left:-6px}
+.av:first-child{margin-left:0}
+.av1{background:var(--blue-pale);color:var(--blue)}
+.av2{background:var(--green-pale);color:var(--green)}
+.av3{background:var(--gold-pale);color:#7a5c00}
+.av4{background:#fbeaf0;color:#993556}
+.av5{background:var(--teal-pale);color:var(--teal)}
+
+/* LOWCOST BOX */
+.lowcost-box{background:var(--teal-pale);border:1px solid #a8d8d8;border-radius:var(--r);padding:14px 16px;margin-bottom:18px}
+.lb-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:500;color:var(--teal);margin-bottom:8px}
+.lb-tips{display:flex;flex-direction:column;gap:5px}
+.lb-tip{font-size:12px;color:#1a5555;line-height:1.5}
+
+/* CHESS HISTORY */
+.history-box{background:var(--black);border-radius:var(--r);padding:16px 18px;margin-bottom:18px;color:var(--white)}
+.hb-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:8px;font-weight:500}
+.hb-text{font-size:13px;color:var(--light);line-height:1.7;font-weight:300}
+.hb-fact{display:flex;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid #333}
+.hb-fact-icon{font-size:18px;flex-shrink:0}
+.hb-fact-text{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ══════ GRUPPI PAGE ══════ */
+.page-header{background:var(--black);padding:38px 32px;border-bottom:1px solid #2e2e2c}
+.page-header h1{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:var(--white);margin-bottom:5px}
+.page-header p{font-size:14px;color:var(--light);font-weight:300}
+
+/* SOCIAL CONNECT BAR */
+.connect-bar{background:var(--gold-pale);border-bottom:1px solid var(--gold-light);padding:14px 32px;display:flex;align-items:center;justify-content:space-between}
+.cb-text{font-size:13px;color:var(--dark)}
+.cb-text strong{color:var(--teal)}
+.cb-actions{display:flex;gap:8px}
+
+.groups-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:24px 32px}
+.gc{border:1px solid var(--pale);border-radius:var(--r);overflow:hidden;transition:box-shadow .2s}
+.gc:hover{box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.gc-hdr{background:var(--black);padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start}
+.gc-name{font-family:'Playfair Display',serif;font-size:14px;color:var(--white);font-weight:600}
+.gc-loc{font-size:12px;color:var(--muted);margin-top:2px}
+.gc-spots{font-size:11px;background:rgba(200,168,75,.15);color:var(--gold-light);padding:3px 9px;border-radius:10px;border:1px solid rgba(200,168,75,.2);white-space:nowrap}
+.gc-body{padding:14px 18px}
+.gc-members{display:flex;margin-bottom:10px}
+.gc-info{font-size:12px;color:var(--muted);line-height:1.8}
+.gc-info span{color:var(--dark);font-weight:500}
+.gc-elo-bar{margin-top:8px}
+.elo-bar-label{font-size:10px;color:var(--muted);margin-bottom:3px}
+.elo-bar-track{background:var(--pale);border-radius:4px;height:5px;overflow:hidden}
+.elo-bar-fill{background:var(--gold);height:100%;border-radius:4px}
+.gc-ftr{padding:11px 18px;border-top:1px solid var(--pale);display:flex;justify-content:space-between;align-items:center}
+.gc-cost{font-size:12px;color:var(--muted)}
+.gc-cost strong{color:var(--teal);font-size:13px}
+.gc-new{border:2px dashed var(--light);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:220px;gap:9px;color:var(--muted);cursor:pointer;transition:all .2s}
+.gc-new:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-pale)}
+
+/* ANNUNCI */
+.annunci-section{padding:0 32px 32px}
+.annunci-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--dark);margin-bottom:14px}
+.annunci-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.ann{padding:13px 15px;border:1px solid var(--pale);border-radius:var(--r);background:var(--white);transition:box-shadow .15s}
+.ann:hover{box-shadow:0 3px 12px rgba(0,0,0,.06)}
+.ann-type{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.ann-room{color:var(--blue)}
+.ann-car{color:var(--green)}
+.ann-generic{color:var(--muted)}
+.ann-text{font-size:13px;color:var(--dark);line-height:1.5;margin-bottom:7px}
+.ann-meta{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.btn-contact{font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid var(--light);background:var(--white);color:var(--mid);transition:all .15s}
+.btn-contact:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ══════ PROFILO PAGE ══════ */
+.profile-layout{display:grid;grid-template-columns:270px 1fr}
+.profile-sidebar{background:var(--black);padding:34px 26px;min-height:calc(100vh - 58px)}
+.p-avatar{width:68px;height:68px;border-radius:50%;background:var(--gold);color:var(--black);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin-bottom:14px}
+.p-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--white);margin-bottom:3px}
+.p-fide{font-size:12px;color:var(--muted);margin-bottom:18px}
+.elo-big{font-family:'Playfair Display',serif;font-size:50px;font-weight:700;color:var(--gold);line-height:1}
+.elo-big-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.elo-delta{font-size:12px;color:#5dca8a;margin-top:3px;margin-bottom:20px}
+.ps-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:22px}
+.ps-item{background:rgba(255,255,255,.04);border-radius:var(--rs);padding:9px 11px;border:1px solid rgba(255,255,255,.07)}
+.ps-num{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold-light)}
+.ps-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+.flag-cloud{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:20px}
+.flag-item{font-size:18px;cursor:default}
+.p-elo-extras{font-size:12px;color:var(--light);line-height:2.1;margin-top:8px}
+
+.profile-main{padding:28px 30px}
+.pm-sec{margin-bottom:28px}
+.pm-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--dark);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--pale)}
+.next-card{background:var(--black);border-radius:var(--r);padding:18px 22px;margin-bottom:14px}
+.nc-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+.nc-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--white);font-weight:600;margin-bottom:3px}
+.nc-meta{font-size:12px;color:var(--light);margin-bottom:12px}
+.nc-actions{display:flex;gap:7px}
+
+/* KM TRACKER */
+.km-track{background:linear-gradient(135deg,#1a1a18 0%,#2c2c2a 100%);border-radius:var(--r);padding:18px 22px;margin-bottom:20px;position:relative;overflow:hidden}
+.km-track::before{content:'✈';position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:48px;opacity:.07}
+.km-num{font-family:'Playfair Display',serif;font-size:42px;font-weight:700;color:var(--gold);line-height:1}
+.km-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.km-sub{font-size:12px;color:var(--light);margin-top:8px;font-weight:300}
+.km-countries{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
+.km-ctry{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);padding:2px 9px;border-radius:10px}
+
+.badges-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.bdg{padding:13px 9px;border:1px solid var(--pale);border-radius:var(--r);text-align:center}
+.bdg.earned{border-color:var(--gold-light);background:var(--gold-pale)}
+.bdg.locked{opacity:.4}
+.bdg-icon{font-size:22px;margin-bottom:5px}
+.bdg-name{font-size:11px;font-weight:500;color:var(--dark);margin-bottom:2px}
+.bdg-desc{font-size:10px;color:var(--muted);line-height:1.3}
+
+.hist-table{width:100%;border-collapse:collapse}
+.hist-table th{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:500;text-align:left;padding:6px 11px;border-bottom:1px solid var(--pale)}
+.hist-table td{font-size:13px;color:var(--dark);padding:9px 11px;border-bottom:1px solid var(--pale)}
+.hist-table tr:hover td{background:var(--pale)}
+.ep{color:var(--green);font-weight:500}
+.en{color:var(--red);font-weight:500}
+
+/* ══════ SCACCHI PAGE ══════ */
+.chess-layout{display:grid;grid-template-columns:1fr 360px;gap:0;min-height:calc(100vh - 58px)}
+.chess-main{padding:28px 32px}
+.chess-sidebar{border-left:1px solid var(--pale);padding:24px 22px;background:var(--white)}
+
+.puzzle-card{background:var(--black);border-radius:var(--r);padding:20px;margin-bottom:20px}
+.puzzle-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);margin-bottom:8px}
+.puzzle-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--white);font-weight:700;margin-bottom:4px}
+.puzzle-sub{font-size:13px;color:var(--light);font-weight:300;margin-bottom:16px}
+.board-wrap{display:inline-block;margin-bottom:14px}
+.board{display:grid;grid-template-columns:repeat(8,44px);grid-template-rows:repeat(8,44px);border:2px solid var(--gold);border-radius:4px;overflow:hidden}
+.sq{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:background .12s;position:relative;user-select:none}
+.sq.light{background:#f0d9b5}
+.sq.dark{background:#b58863}
+.sq.hl{background:rgba(200,168,75,.55)!important}
+.sq.possible{position:relative}
+.sq.possible::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.18);pointer-events:none}
+.sq.possible.has-piece::after{content:'';position:absolute;inset:0;border-radius:50%;border:3px solid rgba(0,0,0,.25);width:100%;height:100%}
+.board-coords{display:grid;grid-template-columns:repeat(8,44px);text-align:center}
+.coord{font-size:10px;color:var(--muted);padding-top:2px}
+.puzzle-msg{font-size:13px;margin-top:10px;padding:8px 12px;border-radius:var(--rs)}
+.msg-ok{background:var(--green-pale);color:var(--green)}
+.msg-err{background:var(--red-pale);color:var(--red)}
+.msg-info{background:var(--blue-pale);color:var(--blue)}
+.puzzle-actions{display:flex;gap:8px;margin-top:12px}
+
+.country-chess{margin-bottom:20px}
+.cc-select{width:100%;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--light);border-radius:var(--rs);background:var(--white);color:var(--dark);margin-bottom:14px}
+.cc-card{background:var(--black);border-radius:var(--r);padding:16px 18px;color:var(--white)}
+.cc-country{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--gold);margin-bottom:8px}
+.cc-text{font-size:13px;color:var(--light);line-height:1.7;font-weight:300;margin-bottom:12px}
+.cc-facts{display:flex;flex-direction:column;gap:7px}
+.cc-fact{display:flex;gap:9px;font-size:12px;color:var(--muted)}
+.cc-fact strong{color:var(--gold-light)}
+
+.leaderboard{margin-top:20px}
+.lb-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--dark);margin-bottom:12px}
+.lb-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--pale)}
+.lb-rank{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--muted);width:20px;text-align:center}
+.lb-rank.top{color:var(--gold)}
+.lb-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500}
+.lb-name{font-size:13px;color:var(--dark);font-weight:500;flex:1}
+.lb-km{font-size:12px;color:var(--muted);text-align:right}
+.lb-km strong{color:var(--teal);font-size:13px;display:block}
+
+/* FEATURED */
+.featured{padding:28px 32px;border-top:1px solid var(--pale)}
+.feat-inner{display:grid;grid-template-columns:1fr 270px;gap:28px;align-items:center;max-width:900px}
+.feat-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);font-weight:500;margin-bottom:7px}
+.feat-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--dark);margin-bottom:7px}
+.feat-sub{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.feat-aside{background:var(--pale);border-radius:var(--r);padding:18px}
+.fa-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--light)}
+.fa-row:last-child{border-bottom:none}
+.fa-row span:last-child{font-weight:500;color:var(--dark)}
+
+/* MODAL OVERLAY */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:var(--r);padding:28px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:12px;right:16px;font-size:20px;cursor:pointer;color:var(--muted);background:none;border:none;line-height:1}
+.modal h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:14px}
+.modal-field{margin-bottom:12px}
+.modal-field label{display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;border:1px solid var(--light);border-radius:var(--rs);background:var(--white);color:var(--dark)}
+.modal-field textarea{resize:vertical;min-height:80px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="logo" onclick="showPage('home')">♟ ChessTraveler</div>
+  <div class="nav-links">
+    <div class="nav-link active" id="nl-home" onclick="nav('home')">Tornei</div>
+    <div class="nav-link" id="nl-gruppi" onclick="nav('gruppi')">Gruppi &amp; Connessioni</div>
+    <div class="nav-link" id="nl-scacchi" onclick="nav('scacchi')">Arena &amp; Storia</div>
+    <div class="nav-link" id="nl-profilo" onclick="nav('profilo')">Profilo</div>
+  </div>
+  <div class="nav-right">
+    <div class="elo-pill">ELO 1847 · Marco R.</div>
+    <div class="av-nav">MR</div>
+  </div>
+</nav>
+
+<!-- ══════════════ HOME / TORNEI ══════════════ -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">♟ Il tuo compagno di viaggio scacchistico</div>
+      <h1>Viaggia per gli scacchi.<br><em>Gioca il torneo della tua vita.</em></h1>
+      <p class="hero-sub">Trova tornei certificati FIDE in tutto il mondo, pianifica il viaggio e parte in gruppo con altri scacchisti.</p>
+      <div class="search-box">
+        <div class="field"><label>Paese / Città</label><input id="s-paese" type="text" placeholder="Es. Spagna, Berlino, Italia…"></div>
+        <div class="field"><label>Date</label><input id="s-date" type="text" placeholder="Es. luglio 2026"></div>
+        <div class="field"><label>Budget max (€)</label><input id="s-budget" type="number" placeholder="Es. 600"></div>
+        <button class="btn-search" onclick="doSearch()">Cerca →</button>
+      </div>
+      <div class="chips">
+        <div class="chip on" onclick="toggleChip(this)">FIDE rated</div>
+        <div class="chip on" onclick="toggleChip(this)">Open a tutti</div>
+        <div class="chip" onclick="toggleChip(this)">ELO &gt; 2000</div>
+        <div class="chip on" onclick="toggleChip(this)">🟢 Low-cost</div>
+        <div class="chip" onclick="toggleChip(this)">Con montepremi</div>
+        <div class="chip" onclick="toggleChip(this)">Gruppi disponibili</div>
+        <div class="chip" onclick="toggleChip(this)">Rapid / Blitz</div>
+      </div>
+      <div class="stats-row">
+        <div><div class="stat-num">3.410</div><div class="stat-lbl">tornei nel database</div></div>
+        <div><div class="stat-num">80+</div><div class="stat-lbl">paesi coperti</div></div>
+        <div><div class="stat-num">1.200</div><div class="stat-lbl">scacchisti iscritti</div></div>
+        <div><div class="stat-num">340</div><div class="stat-lbl">gruppi attivi</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="t-layout">
+    <div class="t-list">
+      <div class="t-list-hdr">
+        <span class="t-count" id="t-count">6 tornei</span>
+        <select class="t-sort" onchange="sortT(this.value)">
+          <option value="date">Per data</option>
+          <option value="budget">Per budget</option>
+          <option value="prize">Per montepremi</option>
+        </select>
+      </div>
+      <div class="t-scroll" id="t-list"></div>
+    </div>
+    <div class="dp" id="dp">
+      <div style="display:flex;height:100%;align-items:center;justify-content:center;color:var(--muted);font-size:14px">← Seleziona un torneo</div>
+    </div>
+  </div>
+
+  <!-- TORNEO DELLA SETTIMANA -->
+  <div class="featured">
+    <div class="eyebrow">★ Torneo della settimana</div>
+    <div class="feat-inner">
+      <div>
+        <div class="feat-title">Gibraltar Chess Festival 2027</div>
+        <div class="feat-sub">Il torneo open più internazionale d'Europa. Atmosfera unica sul Peñón, GM da ogni angolo del mondo e clima mite in febbraio. Perfetto per chi cerca un'esperienza indimenticabile a budget contenuto — soprattutto in gruppo!</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-gold">Vedi dettagli →</button>
+          <button class="btn btn-dark" onclick="nav('gruppi')">Trova compagni</button>
+        </div>
+      </div>
+      <div class="feat-aside">
+        <div class="fa-row"><span>📅 Date</span><span>27 gen – 5 feb</span></div>
+        <div class="fa-row"><span>💰 Iscrizione</span><span>€90</span></div>
+        <div class="fa-row"><span>🏆 Montepremi</span><span>€50.000</span></div>
+        <div class="fa-row"><span>♟ Formato</span><span>10R Swiss FIDE</span></div>
+        <div class="fa-row"><span>✈️ Da Milano</span><span>~€80 a/r</span></div>
+        <div class="fa-row"><span>🏨 Hotel (10n)</span><span>da €300</span></div>
+        <div class="fa-row"><span>🟢 Budget totale</span><span>~€470</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ GRUPPI ══════════════ -->
+<div id="page-gruppi" class="page">
+  <div class="page-header">
+    <h1>Gruppi &amp; Connessioni</h1>
+    <p>Trova scacchisti che vanno allo stesso torneo. Condividi hotel, auto, voli e amicizie.</p>
+  </div>
+
+  <div class="connect-bar">
+    <div class="cb-text">💡 <strong>340 scacchisti italiani</strong> stanno cercando compagni di viaggio in questo momento</div>
+    <div class="cb-actions">
+      <button class="btn" onclick="openModal('modal-annuncio')">📌 Pubblica annuncio</button>
+      <button class="btn btn-gold" onclick="openModal('modal-gruppo')">+ Crea gruppo</button>
+    </div>
+  </div>
+
+  <div class="groups-grid" id="groups-grid"></div>
+
+  <!-- BACHECA -->
+  <div class="annunci-section">
+    <div class="annunci-title">📌 Bacheca annunci</div>
+    <div class="annunci-grid" id="annunci-grid"></div>
+  </div>
+</div>
+
+<!-- ══════════════ ARENA & STORIA ══════════════ -->
+<div id="page-scacchi" class="page">
+  <div class="chess-layout">
+    <div class="chess-main">
+      <div class="eyebrow" style="color:var(--gold);letter-spacing:2px;font-size:11px;font-weight:500;margin-bottom:18px">♟ Puzzle del giorno</div>
+      <div class="puzzle-card">
+        <div class="puzzle-eyebrow">PUZZLE #347 · Matto in 2</div>
+        <div class="puzzle-title">Trova la mossa vincente</div>
+        <div class="puzzle-sub">I Bianchi giocano e danno matto in 2 mosse. <span id="puzzle-turn"></span></div>
+        <div class="board-wrap">
+          <div class="board" id="chess-board"></div>
+          <div class="board-coords" id="board-coords"></div>
+        </div>
+        <div id="puzzle-msg"></div>
+        <div class="puzzle-actions">
+          <button class="btn btn-dark" onclick="resetPuzzle()">↺ Ricomincia</button>
+          <button class="btn" onclick="showHint()">💡 Suggerimento</button>
+          <button class="btn btn-gold" onclick="nextPuzzle()">Prossimo puzzle →</button>
+        </div>
+      </div>
+
+      <!-- STORIA SCACCHISTICA -->
+      <div class="country-chess">
+        <div class="pm-title" style="font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--dark);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--pale)">♟ Storia scacchistica per paese</div>
+        <select class="cc-select" onchange="showCountryChess(this.value)">
+          <option value="">Scegli un paese…</option>
+          <option value="ru">🇷🇺 Russia</option>
+          <option value="es">🇪🇸 Spagna</option>
+          <option value="it">🇮🇹 Italia</option>
+          <option value="fr">🇫🇷 Francia</option>
+          <option value="de">🇩🇪 Germania</option>
+          <option value="cz">🇨🇿 Repubblica Ceca</option>
+          <option value="hu">🇭🇺 Ungheria</option>
+          <option value="in">🇮🇳 India</option>
+        </select>
+        <div id="cc-content"></div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR ARENA -->
+    <div class="chess-sidebar">
+      <!-- CLASSIFICA KM -->
+      <div class="leaderboard">
+        <div class="lb-title">✈️ Classifica viaggiatori</div>
+        <div id="lb-list"></div>
+        <div style="margin-top:10px;font-size:11px;color:var(--muted)">Basata sui km percorsi per tornei nel 2026</div>
+      </div>
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--pale)">
+        <div class="lb-title">📅 Prossimi tornei — Scadenze ravvicinate</div>
+        <div style="display:flex;flex-direction:column;gap:8px" id="deadline-list"></div>
+      </div>
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--pale)">
+        <div class="lb-title">🌍 Curiosità del giorno</div>
+        <div style="font-size:13px;color:var(--mid);line-height:1.6" id="daily-fact"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PROFILO ══════════════ -->
+<div id="page-profilo" class="page">
+  <div class="profile-layout">
+    <div class="profile-sidebar">
+      <div class="p-avatar">MR</div>
+      <div class="p-name">Marco Rossi</div>
+      <div class="p-fide">ID FIDE: 800123 · Italia 🇮🇹</div>
+      <div class="elo-big">1847</div>
+      <div class="elo-big-lbl">ELO FIDE Classical</div>
+      <div class="elo-delta">▲ +23 ultimi 3 mesi</div>
+      <div class="ps-grid">
+        <div class="ps-item"><div class="ps-num">34</div><div class="ps-lbl">tornei giocati</div></div>
+        <div class="ps-item"><div class="ps-num">11</div><div class="ps-lbl">paesi visitati</div></div>
+        <div class="ps-item"><div class="ps-num">28.4k</div><div class="ps-lbl">km scacchistici</div></div>
+        <div class="ps-item"><div class="ps-num">8</div><div class="ps-lbl">gruppi organizzati</div></div>
+      </div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:7px">Paesi visitati</div>
+      <div class="flag-cloud">🇮🇹🇪🇸🇫🇷🇩🇪🇦🇹🇭🇺🇬🇷🇬🇮🇳🇱🇵🇱🇨🇿</div>
+      <div class="p-elo-extras">
+        Rapid: <strong style="color:var(--gold-light)">1910</strong><br>
+        Blitz: <strong style="color:var(--gold-light)">1780</strong><br>
+        FSI Nazionale: <strong style="color:var(--gold-light)">1862</strong>
+      </div>
+    </div>
+
+    <div class="profile-main">
+      <!-- KM TRACKER -->
+      <div class="pm-sec">
+        <div class="km-track">
+          <div class="km-num">28.400</div>
+          <div class="km-lbl">km percorsi per gli scacchi</div>
+          <div class="km-sub">Equivale a girare il mondo 0,7 volte. In viaggio verso il giro completo! 🌍</div>
+          <div class="km-countries">
+            <div class="km-ctry">🇪🇸 Siviglia 2.150km</div>
+            <div class="km-ctry">🇬🇮 Gibilterra 2.050km</div>
+            <div class="km-ctry">🇩🇪 Berlino 1.340km</div>
+            <div class="km-ctry">🇨🇿 Praga 1.180km</div>
+            <div class="km-ctry">🇫🇷 Cap d'Agde 890km</div>
+            <div class="km-ctry">+ altri 11 paesi</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROSSIMO TORNEO -->
+      <div class="pm-sec">
+        <div class="pm-title">Prossimo torneo pianificato</div>
+        <div class="next-card">
+          <div class="nc-lbl">✈️ Viaggio confermato · Gruppo di 3</div>
+          <div class="nc-title">Città di Seville Open 2026</div>
+          <div class="nc-meta">📍 Siviglia, Spagna · 12–21 luglio 2026 · Budget stimato ~€550</div>
+          <div class="nc-actions">
+            <button class="btn btn-gold">Piano viaggio →</button>
+            <button class="btn" style="border-color:rgba(255,255,255,.15);color:var(--light)">Chat gruppo 💬</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BADGE -->
+      <div class="pm-sec">
+        <div class="pm-title">Achievement &amp; Badge</div>
+        <div class="badges-grid">
+          <div class="bdg earned"><div class="bdg-icon">🌍</div><div class="bdg-name">Globe Trotter</div><div class="bdg-desc">10+ paesi per tornei</div></div>
+          <div class="bdg earned"><div class="bdg-icon">♟</div><div class="bdg-name">Veteran</div><div class="bdg-desc">30+ tornei giocati</div></div>
+          <div class="bdg earned"><div class="bdg-icon">🤝</div><div class="bdg-name">Capitano</div><div class="bdg-desc">3+ gruppi organizzati</div></div>
+          <div class="bdg earned"><div class="bdg-icon">✈️</div><div class="bdg-name">25.000 km</div><div class="bdg-desc">Traguardo km raggiunto</div></div>
+          <div class="bdg locked"><div class="bdg-icon">👑</div><div class="bdg-name">ELO 2000</div><div class="bdg-desc">Raggiungi i 2000 FIDE</div></div>
+          <div class="bdg locked"><div class="bdg-icon">🌐</div><div class="bdg-name">World Tour</div><div class="bdg-desc">Tornei su 5 continenti</div></div>
+          <div class="bdg locked"><div class="bdg-icon">⚡</div><div class="bdg-name">GM Slayer</div><div class="bdg-desc">Vinci vs un GM</div></div>
+          <div class="bdg locked"><div class="bdg-icon">🚀</div><div class="bdg-name">50.000 km</div><div class="bdg-desc">Prossimo traguardo km</div></div>
+        </div>
+      </div>
+
+      <!-- STORICO -->
+      <div class="pm-sec">
+        <div class="pm-title">Storico tornei recenti</div>
+        <table class="hist-table">
+          <thead><tr><th>Torneo</th><th>Sede</th><th>Data</th><th>Risultato</th><th>Δ ELO</th><th>km</th></tr></thead>
+          <tbody>
+            <tr><td>Cap d'Agde Échecs 2025</td><td>🇫🇷 Francia</td><td>Ott 2025</td><td>4.5/9</td><td class="ep">+14</td><td>890</td></tr>
+            <tr><td>Padova Chess Open 2025</td><td>🇮🇹 Italia</td><td>Lug 2025</td><td>6/9</td><td class="ep">+22</td><td>130</td></tr>
+            <tr><td>Benidorm Festival 2025</td><td>🇪🇸 Spagna</td><td>Ago 2025</td><td>3/9</td><td class="en">−18</td><td>1.940</td></tr>
+            <tr><td>Gibraltar Chess 2025</td><td>🇬🇮 Gibilterra</td><td>Feb 2025</td><td>5.5/10</td><td class="ep">+9</td><td>2.050</td></tr>
+            <tr><td>Prague Chess 2024</td><td>🇨🇿 Rep. Ceca</td><td>Mar 2024</td><td>4/9</td><td class="en">−4</td><td>1.180</td></tr>
+            <tr><td>Siviglia Open 2024</td><td>🇪🇸 Spagna</td><td>Lug 2024</td><td>7/9</td><td class="ep">+31</td><td>2.150</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALI -->
+<div class="modal-overlay" id="modal-gruppo">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-gruppo')">✕</button>
+    <h2>Crea un gruppo di viaggio</h2>
+    <div class="modal-field"><label>Torneo</label><select><option>Città di Seville Open 2026</option><option>Cap d'Agde Échecs 2026</option><option>Padova Chess Open 2026</option><option>Benidorm Festival 2026</option><option>Prague Chess Festival 2027</option></select></div>
+    <div class="modal-field"><label>Città di partenza</label><input type="text" placeholder="Es. Milano, Torino, Roma…"></div>
+    <div class="modal-field"><label>Trasporto preferito</label><select><option>Aereo</option><option>Auto condivisa</option><option>Treno</option><option>Bus / Flixbus</option><option>Aperto a tutto</option></select></div>
+    <div class="modal-field"><label>Max partecipanti</label><input type="number" value="6" min="2" max="20"></div>
+    <div class="modal-field"><label>Condividi hotel?</label><select><option>Sì, cerco coinquilini</option><option>No, ho già sistemazione</option><option>Da valutare</option></select></div>
+    <div class="modal-field"><label>Note per chi si unisce</label><textarea placeholder="Es. Partiamo giovedì sera, torniamo la domenica dopo il torneo. Ambiente rilassato, tutti i livelli benvenuti!"></textarea></div>
+    <button class="btn btn-gold" style="width:100%;padding:11px;font-size:14px" onclick="closeModal('modal-gruppo');alert('Gruppo creato! Gli altri scacchisti possono ora trovarti e unirti.')">Crea gruppo →</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-annuncio">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-annuncio')">✕</button>
+    <h2>Pubblica un annuncio</h2>
+    <div class="modal-field"><label>Tipo di annuncio</label><select><option>🛏 Cerco compagno/a di stanza</option><option>🚗 Offro passaggio</option><option>🚗 Cerco passaggio</option><option>💬 Cerco info / consiglio</option><option>🏨 Offro posto in appartamento</option></select></div>
+    <div class="modal-field"><label>Torneo di riferimento</label><input type="text" placeholder="Es. Siviglia Open luglio 2026"></div>
+    <div class="modal-field"><label>Il tuo annuncio</label><textarea placeholder="Descrivi la tua situazione e cosa cerchi…"></textarea></div>
+    <div class="modal-field"><label>Contatto (email o Telegram)</label><input type="text" placeholder="Es. @tuousername"></div>
+    <button class="btn btn-gold" style="width:100%;padding:11px;font-size:14px" onclick="closeModal('modal-annuncio');alert('Annuncio pubblicato sulla bacheca!')">Pubblica →</button>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────
+const T = [
+  {id:1,name:"Città di Seville Open 2026",city:"Siviglia",country:"Spagna",flag:"🇪🇸",venue:"Real Casino de la Exposición",dates:"12–21 lug 2026",format:"9R Swiss",cadence:"90'+30\"",cats:"Open + U1800",players:"214/400",deadline:"5 lug 2026",days:64,entry:60,flight:140,hotel:270,meals:80,nights:9,prize:15000,type:"fide",lowcost:false,
+   travel:[{i:"✈️",t:"Aereo",d:"~2h 15min\nda €65 a/r",best:true},{i:"🚌",t:"Bus notturno",d:"~18h\nda €30 a/r",best:false},{i:"🚗",t:"Auto in gruppo",d:"~14h\n~€60 a testa",best:false}],
+   poi:["🏛 Cattedrale","🏰 Real Alcázar","🌉 Barrio Santa Cruz","🎭 Flamenco","🍊 Mercado Triana","☀️ Spiagge Cadice (1h)"],
+   group:{n:3,m:["LR","MF","GS"]},
+   lowcost_tips:["Prenota volo con 3+ mesi di anticipo: spesso sotto €60 a/r","Hostel nel centro storico: da €18/notte (perfetti per giovani)","Menú del día a €12: abbondante e ottimo","AVE da Madrid se fai scalo: +€30 ma velocissimo"],
+   chess_history:"La Spagna ha una tradizione scacchistica medievale profonda. Il libro 'Libro de ajedrez, dados y tablas' fu commissionato da Alfonso X nel 1283, uno dei più antichi testi di scacchi d'Europa. Siviglia ospita tornei da decenni e ha prodotto giocatori di livello internazionale.",
+   chess_fact:"♟ Alfonso X di Castiglia codificò le regole degli scacchi in Europa nel 1283 proprio in Spagna."
+  },
+  {id:2,name:"Benidorm Chess Festival",city:"Benidorm",country:"Spagna",flag:"🇪🇸",venue:"Hotel Poseidón Resort",dates:"5–14 ago 2026",format:"9R Swiss",cadence:"40/2h+30'",cats:"Open",players:"320/500",deadline:"28 lug 2026",days:87,entry:40,flight:120,hotel:220,meals:70,nights:9,prize:6000,type:"open",lowcost:true,
+   travel:[{i:"✈️",t:"Aereo lowcost",d:"~2h 30min\nda €30 a/r",best:true},{i:"🚌",t:"Bus + treno",d:"~22h\nda €20 a/r",best:false},{i:"🚗",t:"Auto 4 persone",d:"~16h\n~€45 a testa",best:false}],
+   poi:["🏖 Spiagge","🎢 Terra Mítica","🌴 Passeig Aigüera","🐟 Ristoranti pesce","🏄 Watersport"],
+   group:{n:6,m:["TM","UV","WR","XP","YA","ZL"]},
+   lowcost_tips:["Voli Ryanair BLQ-ALC spesso sotto €25 a/r se prenotati con anticipo","Hotel incluso nell'iscrizione per alcune categorie — verifica il bando!","Supermercato Mercadona vicinissimo: colazioni e spuntini economici","Condividi stanza: 4 letti in hotel a €35/pp/notte"],
+   chess_history:"Benidorm ospita uno dei festival balneari più famosi del circuito scacchistico europeo. La combinazione mare+torneo attira ogni anno oltre 500 giocatori da 40+ paesi. Ideale per chi vuole vacanza e scacchi insieme.",
+   chess_fact:"🌊 Il festival di Benidorm è uno dei pochi tornei al mondo dove si gioca a bordo piscina con vista mare."
+  },
+  {id:3,name:"Cap d'Agde Échecs",city:"Cap d'Agde",country:"Francia",flag:"🇫🇷",venue:"Palais des Congrès",dates:"22–29 ott 2026",format:"9R Swiss",cadence:"90'+30\"",cats:"Open + U2000 + U1600",players:"180/350",deadline:"10 ott 2026",days:161,entry:55,flight:110,hotel:200,meals:65,nights:7,prize:20000,type:"rated",lowcost:false,
+   travel:[{i:"🚗",t:"Auto in gruppo",d:"~7h\n~€40 a testa",best:true},{i:"✈️",t:"Aereo (scalo)",d:"~3h\nda €90 a/r",best:false},{i:"🚂",t:"Treno+bus",d:"~8h\nda €55 a/r",best:false}],
+   poi:["🏖 Spiagge naturiste","⛵ Porto turistico","🍷 Vini Languedoc","🦩 Camargue (30min)","🏰 Abbaye Valmagne"],
+   group:{n:5,m:["AF","BM","CP","DL","EV"]},
+   lowcost_tips:["In auto da Milano in 4: circa €40/persona totale andata","Appartamento Airbnb per 4 persone: ~€45/pp notte vs €80 in hotel","Ottobre = bassa stagione: prezzi voli dimezzati rispetto ad agosto","Categoria U1600 perfetta per giocatori in crescita — iscrizione più economica"],
+   chess_history:"La Francia è culla degli scacchi moderni. Philidor, il più grande giocatore del XVIII secolo, era francese e scrisse 'L'analyse du jeu des échecs' nel 1749, rivoluzionando la teoria. Il torneo di Cap d'Agde fa parte della storica tradizione di grandi open francesi.",
+   chess_fact:"🎼 François-André Philidor era anche compositore: fu allievo di Rameau e scrisse opere per l'Opéra di Parigi."
+  },
+  {id:4,name:"Padova Chess Open",city:"Padova",country:"Italia",flag:"🇮🇹",venue:"Hotel Donatello",dates:"18–25 lug 2026",format:"7R Swiss",cadence:"90'+30\"",cats:"Open + U1700",players:"120/200",deadline:"12 lug 2026",days:71,entry:35,flight:0,hotel:140,meals:50,nights:7,prize:5000,type:"fide",lowcost:true,
+   travel:[{i:"🚂",t:"Treno",d:"Venezia–Padova\n~30min, €4",best:true},{i:"🚗",t:"Auto",d:"~45min da VE\nparcheggio ok",best:false},{i:"🚌",t:"Bus SITA",d:"da €3\nfrequente",best:false}],
+   poi:["🏛 Basilica Sant'Antonio","🎨 Cappella Scrovegni","☕ Caffè Pedrocchi","🌿 Orto Botanico UNESCO","🛒 Piazza delle Erbe"],
+   group:{n:2,m:["RN","SK"]},
+   lowcost_tips:["Nessun volo necessario: treno da Venezia a €4","Ostello Padova: da €22/notte in camera multipla","Menù universitario: da €6 pranzo completo","Ideale per il primo torneo FIDE — costi minimi, atmosfera accogliente"],
+   chess_history:"L'Italia ha una delle federazioni scacchistiche più antiche d'Europa (FSI, 1911). Lo stile italiano del XVI secolo dette il nome a celebri aperture come la 'Giuoco Piano' e la 'Giuoco del Cavallo'. Padova ha una viva comunità scacchistica legata all'università.",
+   chess_fact:"♟ Il 'Giuoco Piano' (1.e4 e5 2.Cf3 Cc6 3.Ac4) prende il nome proprio dall'italiano: 'gioco tranquillo'."
+  },
+  {id:5,name:"Prague Chess Festival",city:"Praga",country:"Rep. Ceca",flag:"🇨🇿",venue:"Hotel Don Giovanni",dates:"8–18 mar 2027",format:"10R Swiss",cadence:"90'+30\"",cats:"Challengers + Rapid",players:"95/300",deadline:"20 feb 2027",days:294,entry:80,flight:130,hotel:270,meals:90,nights:10,prize:30000,type:"fide",lowcost:false,
+   travel:[{i:"✈️",t:"Aereo",d:"~1h 45min\nda €55 a/r",best:true},{i:"🚌",t:"Flixbus",d:"~8h\nda €20 a/r",best:false},{i:"🚗",t:"Auto",d:"~7h\n~€50 a testa",best:false}],
+   poi:["🏰 Castello di Praga","🌉 Ponte Carlo","🍺 Birra artigianale","🎭 Teatro Nazionale","🕰 Orologio Astronomico"],
+   group:{n:1,m:["IO"]},
+   lowcost_tips:["Flixbus da Milano: ~€20 a/r se prenotato con anticipo (8h ma economicissimo)","Ostelli eccellenti nel centro storico da €18/notte","La birra Pilsner Urquell costa meno del caffè — idratarsi bene tra le partite 😄","Marzo = bassa stagione: hotel al 40% in meno rispetto all'estate"],
+   chess_history:"La Repubblica Ceca (già Cecoslovacchia) ha prodotto campioni leggendari. David Bronstein sfidò Botvinnik nel match mondiale del 1951. Il torneo di Praga è uno degli appuntamenti più prestigiosi dell'Europa centrale, frequentato da GM di punta.",
+   chess_fact:"🏆 Vlastimil Hort, ceco, fu per anni uno dei top-10 al mondo negli anni '70 e '80, avversario di Karpov e Fischer."
+  },
+  {id:6,name:"Mallorca Chess Open",city:"Palma",country:"Spagna",flag:"🇪🇸",venue:"Hotel Riu Palace",dates:"1–9 set 2026",format:"9R Rapid FIDE",cadence:"25'+10\"",cats:"Open Rapid",players:"210/400",deadline:"25 ago 2026",days:115,entry:45,flight:110,hotel:240,meals:75,nights:8,prize:8000,type:"rapid",lowcost:true,
+   travel:[{i:"✈️",t:"Aereo",d:"~2h\nda €35 a/r",best:true},{i:"🚢",t:"Traghetto (da BCN)",d:"~8h\nda €40 a/r",best:false},{i:"🚗",t:"Auto+traghetto",d:"~13h\n~€80 a testa",best:false}],
+   poi:["🏰 Cattedrale La Seu","🌊 Cala d'Or","🍋 Sóller (treno storico)","🥗 Mercado Olivar","🌅 Serra Tramuntana"],
+   group:{n:4,m:["PA","QB","RC","SD"]},
+   lowcost_tips:["Ryanair da Bologna spesso a €15 a/r — controlla con 2+ mesi anticipo","Hostel a Palma: da €20/notte con ottima posizione","Rapid: partite più brevi = più tempo per la spiaggia!","Settembre: clima perfetto, turisti diminuiti, prezzi scesi"],
+   chess_history:"La Spagna ospita alcuni dei più belli tornei balneari al mondo. Maiorca in particolare, con il suo clima e la qualità dell'organizzazione, è diventata una meta fissa per i giocatori europei che cercano vacanza e competizione.",
+   chess_fact:"🌴 Il formato Rapid è sempre più popolare tra i giovani: partite veloci, più round al giorno, meno stress logistico."
+  }
+];
+
+const annunci = [
+  {tipo:"ann-room",tit:"🛏 Cerco compagno di stanza",txt:"Cerco compagno/a per Siviglia Open luglio. Hotel 3★ vicino alla sede, ~€35/notte a testa. Atmosfera rilassata.",chi:"Marco R. · ELO 1847 · Milano"},
+  {tipo:"ann-car",tit:"🚗 Offro passaggio",txt:"Parto da Torino in auto per Cap d'Agde ottobre. 3 posti liberi, dividiamo gasolio e pedaggi.",chi:"Giulia F. · ELO 1590 · Torino"},
+  {tipo:"ann-room",tit:"🛏 Cerco compagno di stanza",txt:"Per Benidorm agosto. Arrivo 4 agosto, parto il 15. Preferibilmente ELO 1400-1700, amanti del mare.",chi:"Luca B. · ELO 1512 · Roma"},
+  {tipo:"ann-car",tit:"🚗 Cerco passaggio",txt:"Cerco passaggio da Milano per Padova Chess Open luglio. Offro contributo spese benzina.",chi:"Sara T. · ELO 1720 · Milano"},
+  {tipo:"ann-generic",tit:"💬 Cerco info",txt:"Qualcuno ha già giocato a Gibilterra? Cerco consigli su hotel economici e come arrivarci dalla Spagna.",chi:"Dario M. · ELO 1980 · Napoli"},
+  {tipo:"ann-room",tit:"🏨 Offro posto in appartamento",txt:"Ho prenotato appartamento a Praga per marzo 2027. Posto libero, €38/notte tutto compreso, zona centrale.",chi:"Chiara V. · ELO 1855 · Venezia"}
+];
+
+const groups = [
+  {name:"Città di Seville Open",loc:"Siviglia · 12–21 lug 2026",spots:"3/8",members:["LR","MF","GS"],cls:["av1","av2","av3"],dep:"Milano Malpensa",elo:1780,elo_pct:56,transport:"Aereo",budget:"~€550"},
+  {name:"Cap d'Agde Échecs",loc:"Cap d'Agde · 22–29 ott 2026",spots:"5/10",members:["AF","BM","CP","DL","EV"],cls:["av1","av4","av2","av3","av5"],dep:"Torino / Milano",elo:1640,elo_pct:41,transport:"Auto condivisa",budget:"~€420"},
+  {name:"Padova Chess Open",loc:"Padova · 18–25 lug 2026",spots:"2/6",members:["RN","SK"],cls:["av3","av2"],dep:"Venezia / Mestre",elo:1920,elo_pct:73,transport:"Treno",budget:"~€220"},
+  {name:"Benidorm Festival",loc:"Benidorm · 5–14 ago 2026",spots:"6/12",members:["TM","UV","WR","XP"],cls:["av4","av1","av2","av3"],dep:"Roma Fiumicino",elo:1510,elo_pct:28,transport:"Aereo lowcost",budget:"~€450"},
+  {name:"Prague Chess Festival",loc:"Praga · 8–18 mar 2027",spots:"1/8",members:["IO"],cls:["av2"],dep:"Bologna",elo:2050,elo_pct:85,transport:"Aereo / Flixbus",budget:"~€510"}
+];
+
+const leaderboard = [
+  {name:"Anna V.",km:34200,cls:"av2",flag:"🇪🇸🇫🇷🇩🇪"},
+  {name:"Marco R.",km:28400,cls:"av1",flag:"🇮🇹 Tu"},
+  {name:"Dario M.",km:22100,cls:"av3",flag:"🇬🇮🇭🇺"},
+  {name:"Giulia F.",km:19800,cls:"av4",flag:"🇫🇷🇦🇹"},
+  {name:"Luca B.",km:15300,cls:"av5",flag:"🇪🇸🇬🇷"},
+  {name:"Sara T.",km:12900,cls:"av2",flag:"🇮🇹🇨🇿"},
+];
+
+const countryChess = {
+  ru:{flag:"🇷🇺",name:"Russia",text:"La Russia è sinonimo di scacchi: dal 1948 al 1972 e dal 1975 al 1993, il titolo mondiale appartenne quasi ininterrottamente a giocatori sovietici. Botvinnik, Tal, Petrosian, Spassky, Karpov, Kasparov — una dinastia senza precedenti nella storia dello sport.",facts:["🏆 La Russia ha vinto 18 Olimpiadi scacchistiche","♟ Kasparov rimase World #1 per 20 anni consecutivi","📚 Le scuole sovietiche insegnavano gli scacchi come materia curriculare","🧠 Mikhail Tal, detto 'il Mago di Riga', era noto per sacrifici impossibili"]},
+  es:{flag:"🇪🇸",name:"Spagna",text:"La Spagna ha una tradizione scacchistica medievale profonda. Alfonso X codificò le regole europee nel 1283 nel 'Libro de ajedrez'. Oggi la Spagna ospita alcuni dei tornei open più famosi al mondo.",facts:["📖 Il 'Libro de ajedrez' del 1283 è uno dei più antichi testi scacchistici","🌊 Benidorm, Siviglia, Maiorca: tre dei festival balneari più famosi","♟ La 'Ruy Lopez' (1.e4 e5 2.Cf3 Cc6 3.Ab5) prende il nome da un vescovo spagnolo del 1500","🏆 La Spagna ha prodotto GM come Paco Vallejo"]},
+  it:{flag:"🇮🇹",name:"Italia",text:"L'Italia è la culla delle prime aperture moderne. Il 'Giuoco Piano', la 'Siciliana' e la 'Giuoco del Cavallo' nascono dalla scuola italiana del XVI secolo. La FSI è tra le federazioni europee più antiche.",facts:["♟ Il 'Giuoco Piano' nasce in Italia nel XVI secolo","🏛 La prima partita documentata di scacchi moderni è italiana (1475 circa)","📜 Gioachino Greco, giocatore romano del 1600, girò l'Europa vincendo tutto","🇮🇹 La Siciliana (1.e4 c5) è l'apertura più giocata al mondo"]},
+  fr:{flag:"🇫🇷",name:"Francia",text:"Philidor, il più grande giocatore del XVIII secolo, era francese. Scrisse nel 1749 l'analisi che rivoluzionò la teoria, affermando che 'i pedoni sono l'anima del gioco'. La Francia ospita tornei storici come Cannes e Cap d'Agde.",facts:["🎼 Philidor era anche compositore operistico di successo","♟ La Difesa Philidor (1.e4 e5 2.Cf3 d6) porta il suo nome","🏆 France ha vinto 2 Olimpiadi scacchistiche","☕ Il Café de la Régence di Parigi fu per 200 anni il centro degli scacchi europei"]},
+  de:{flag:"🇩🇪",name:"Germania",text:"La Germania è la patria di alcuni tra i tornei più storici. Il Torneo di Hastings e il Torneo di Norimberga del XIX secolo furono tra le prime competizioni internazionali. Emanuel Lasker, tedesco, fu campione del mondo per 27 anni.",facts:["👑 Emanuel Lasker fu World Champion dal 1894 al 1921 — record assoluto","♟ Nimzowitsch e Tartakower, attivi in Germania, rivoluzionarono la strategia moderna","📚 La scuola ipermoderna (anni '20) nacque nel contesto culturale tedesco","🏆 La Germania ospita il torneo di Dortmund ogni anno da decenni"]},
+  cz:{flag:"🇨🇿",name:"Rep. Ceca",text:"Praga è una delle capitali scacchistiche d'Europa. La Cecoslovacchia ha prodotto campioni come Vlastimil Hort e il match Bronstein-Botvinnik del 1951 è considerato uno dei più belli della storia.",facts:["♟ David Bronstein sfidò Botvinnik nel 1951: il match finì 12-12","🏆 Vlastimil Hort fu top-10 mondiale negli anni '70-'80","🏰 Il Prague Chess Festival è uno dei più seguiti in Europa centrale","🎯 La scuola ceca è nota per la solidità difensiva e la precisione tecnica"]},
+  hu:{flag:"🇭🇺",name:"Ungheria",text:"L'Ungheria ha una storia scacchistica straordinaria. Le sorelle Polgár — Susan, Sofia e Judit — rivoluzionarono gli scacchi femminili e Judit divenne la più forte giocatrice di tutti i tempi, nel top-10 mondiale assoluto.",facts:["👩 Judit Polgár: l'unica donna nel top-10 mondiale assoluto","🏆 L'Ungheria ha vinto 10 Olimpiadi scacchistiche","♟ Le sorelle Polgár furono un esperimento educativo: gli scacchi come metodo","📚 Budapest ospita il torneo di Natale, uno dei più antichi in Europa"]},
+  in:{flag:"🇮🇳",name:"India",text:"L'India è la culla degli scacchi: il gioco nasce in India come 'chaturanga' intorno al VI secolo d.C. Oggi l'India è tornata al vertice mondiale con Magnus Carlsen e poi Viswanathan Anand e Gukesh.",facts:["🌏 Gli scacchi nascono in India come 'chaturanga' nel VI secolo","👑 Viswanathan Anand: 5 volte campione del mondo (2000-2013)","🚀 Gukesh Dommaraju: campione del mondo 2024, il più giovane della storia","♟ L'India ha il più alto numero di GM in crescita al mondo"]}
+};
+
+// ─── PUZZLE ────────────────────────────────────────
+const puzzles = [
+  {
+    id:1, title:"Matto in 2 — Sacrificio di Torre",
+    fen: {
+      pieces: {
+        "e8":"♚","d8":"♜","h8":"♜","g8":"♞",
+        "f7":"♟","g7":"♟","h7":"♟",
+        "e7":"♝","c7":"♟","a7":"♟",
+        "e1":"♔","g1":"♖","d1":"♕","f3":"♘","c3":"♗","b2":"♙","g2":"♙","h2":"♙","f2":"♙"
+      },
+      solution: [["g1","g7"],["h8","g7"],["d1","h5"]],
+      hint:"Pensa a un sacrificio sulla colonna g"
+    }
+  }
+];
+let currentPuzzle = 0;
+let selectedSq = null;
+let moveStep = 0;
+let boardPieces = {};
+const cols = "abcdefgh";
+
+function initBoard() {
+  const p = puzzles[currentPuzzle];
+  boardPieces = {...p.fen.pieces};
+  moveStep = 0;
+  selectedSq = null;
+  renderBoard();
+  document.getElementById('puzzle-msg').innerHTML = '';
+  document.getElementById('puzzle-turn').textContent = "Il tuo turno: muovi i Bianchi.";
+}
+
+function renderBoard() {
+  const board = document.getElementById('chess-board');
+  board.innerHTML = '';
+  for(let r=8;r>=1;r--){
+    for(let c=0;c<8;c++){
+      const sq = cols[c]+r;
+      const div = document.createElement('div');
+      const isLight = (c+r)%2===1;
+      div.className = 'sq '+(isLight?'light':'dark');
+      if(selectedSq===sq) div.classList.add('hl');
+      if(boardPieces[sq]) div.textContent = boardPieces[sq];
+      div.dataset.sq = sq;
+      div.onclick = () => handleClick(sq);
+      board.appendChild(div);
+    }
+  }
+}
+
+function handleClick(sq) {
+  const p = puzzles[currentPuzzle];
+  if(moveStep >= p.fen.solution.length) return;
+  const expected = p.fen.solution[moveStep];
+  if(!selectedSq) {
+    if(boardPieces[sq] && isWhite(boardPieces[sq])) { selectedSq=sq; renderBoard(); }
+    return;
+  }
+  const from=selectedSq; selectedSq=null;
+  if(from===expected[0] && sq===expected[1]) {
+    boardPieces[sq]=boardPieces[from]; delete boardPieces[from];
+    moveStep++;
+    renderBoard();
+    if(moveStep===1 && p.fen.solution.length>1) {
+      // opponent move
+      setTimeout(()=>{
+        const opp = p.fen.solution[1];
+        boardPieces[opp[1]]=boardPieces[opp[0]]; delete boardPieces[opp[0]];
+        moveStep++;
+        renderBoard();
+        document.getElementById('puzzle-msg').innerHTML='<div class="puzzle-msg msg-info">Risposta avversario simulata. Ora dai il colpo finale!</div>';
+      },600);
+    } else if(moveStep>=p.fen.solution.length) {
+      document.getElementById('puzzle-msg').innerHTML='<div class="puzzle-msg msg-ok">✅ Esatto! Puzzle risolto. +10 punti arena!</div>';
+    }
+  } else {
+    document.getElementById('puzzle-msg').innerHTML='<div class="puzzle-msg msg-err">❌ Mossa sbagliata — riprova!</div>';
+    renderBoard();
+  }
+}
+
+function isWhite(p){ return "♔♕♖♗♘♙".includes(p); }
+function resetPuzzle(){ initBoard(); }
+function showHint(){ const h=puzzles[currentPuzzle].fen.hint; document.getElementById('puzzle-msg').innerHTML=`<div class="puzzle-msg msg-info">💡 ${h}</div>`; }
+function nextPuzzle(){ initBoard(); document.getElementById('puzzle-msg').innerHTML='<div class="puzzle-msg msg-info">Nuovo puzzle caricato!</div>'; }
+
+// ─── COUNTRY CHESS ──────────────────────────────────
+function showCountryChess(code) {
+  const el = document.getElementById('cc-content');
+  if(!code){ el.innerHTML=''; return; }
+  const d = countryChess[code];
+  el.innerHTML = `
+    <div class="cc-card">
+      <div class="cc-country">${d.flag} ${d.name} — Storia scacchistica</div>
+      <div class="cc-text">${d.text}</div>
+      <div class="cc-facts">
+        ${d.facts.map(f=>`<div class="cc-fact"><span>${f}</span></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ─── RENDER TOURNAMENT LIST ──────────────────────────
+function renderList(list) {
+  const c = document.getElementById('t-list');
+  c.innerHTML='';
+  document.getElementById('t-count').textContent=list.length+' tornei';
+  list.forEach((t,i)=>{
+    const tot=t.entry+t.flight+t.hotel+t.meals;
+    const d=document.createElement('div');
+    d.className='tc'+(i===0?' sel':'');
+    d.onclick=()=>{document.querySelectorAll('.tc').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');renderDetail(t)};
+    const labels={fide:'FIDE',open:'Open',rated:'Rated',rapid:'Rapid'};
+    const cls={fide:'bf',open:'bo',rated:'br',rapid:'bp'};
+    d.innerHTML=`<div class="tc-top"><div class="tc-name">${t.flag} ${t.name}</div><span class="badge ${cls[t.type]}">${labels[t.type]}</span></div>
+    <div class="tc-meta">📍 ${t.city} · ${t.dates}<br>♟ ${t.format}</div>
+    <div class="tc-prize">🏆 €${t.prize.toLocaleString()} montepremi</div>
+    <div class="tc-budget">💼 ~€${tot} totale${t.lowcost?'<span class="lowcost-tag">🟢 low-cost</span>':''}</div>`;
+    c.appendChild(d);
+  });
+  if(list.length>0) renderDetail(list[0]);
+}
+
+function renderDetail(t) {
+  const tot=t.entry+t.flight+t.hotel+t.meals;
+  const avc=['av1','av2','av3','av4','av5'];
+  const avs=t.group.m.slice(0,4).map((m,i)=>`<div class="av ${avc[i%5]}">${m}</div>`).join('');
+  const pois=t.poi.map(p=>`<div class="poi">${p}</div>`).join('');
+  const travs=t.travel.map(tr=>`<div class="tcard${tr.best?' best':''}"><div class="t-icon">${tr.i}</div><div class="t-type">${tr.t}</div><div class="t-info">${tr.d.replace('\n','<br>')}</div>${tr.best?'<div class="t-best-tag">consigliato</div>':''}</div>`).join('');
+  const lctips=t.lowcost_tips.map(tip=>`<div class="lb-tip">💡 ${tip}</div>`).join('');
+  const flRow=t.flight>0?`<div class="ic-row"><span>Volo a/r</span><strong>~€${t.flight}</strong></div>`:`<div class="ic-row"><span>Treno locale</span><strong>€4–15</strong></div>`;
+
+  document.getElementById('dp').innerHTML=`
+    <div>
+      <div class="dp-title">${t.flag} ${t.name}</div>
+      <div class="dp-loc">📍 ${t.venue} · ${t.city}, ${t.country}</div>
+      <div class="dp-actions">
+        <button class="btn">♥ Salva</button>
+        <button class="btn" onclick="nav('gruppi')">👥 Unisciti al gruppo</button>
+        <button class="btn btn-teal" onclick="nav('scacchi')">♟ Storia di ${t.country}</button>
+        <button class="btn btn-gold">Pianifica viaggio →</button>
+      </div>
+
+      <div class="cd-bar">
+        <span style="font-size:13px;font-weight:500;color:var(--dark)">⏰ Scadenza iscrizione: ${t.deadline}</span>
+        <span><span class="cd-days">${t.days}</span> <span style="font-size:12px;color:var(--mid)">giorni</span></span>
+      </div>
+
+      <div class="dp-grid">
+        <div class="icard">
+          <div class="ic-tit">Dettagli torneo</div>
+          <div class="ic-row"><span>Formato</span><strong>${t.format}</strong></div>
+          <div class="ic-row"><span>Cadenza</span><strong>${t.cadence}</strong></div>
+          <div class="ic-row"><span>Categorie</span><strong>${t.cats}</strong></div>
+          <div class="ic-row"><span>Iscritti</span><strong>${t.players}</strong></div>
+          <div class="ic-row"><span>Montepremi</span><strong style="color:var(--green)">€${t.prize.toLocaleString()}</strong></div>
+        </div>
+        <div class="icard">
+          <div class="ic-tit">Stima costi</div>
+          ${flRow}
+          <div class="ic-row"><span>Hotel (${t.nights} notti)</span><strong>~€${t.hotel}</strong></div>
+          <div class="ic-row"><span>Iscrizione</span><strong>€${t.entry}</strong></div>
+          <div class="ic-row"><span>Pasti</span><strong>~€${t.meals}</strong></div>
+          <div class="ic-total"><span>Totale stimato</span><span>~€${tot}</span></div>
+        </div>
+      </div>
+
+      ${t.lowcost?`<div class="lowcost-box"><div class="lb-title">🟢 Consigli low-cost per questo torneo</div><div class="lb-tips">${lctips}</div></div>`:''}
+
+      <div class="history-box">
+        <div class="hb-title">♟ Storia scacchistica — ${t.country}</div>
+        <div class="hb-text">${t.chess_history}</div>
+        <div class="hb-fact"><div class="hb-fact-icon">💡</div><div class="hb-fact-text">${t.chess_fact}</div></div>
+      </div>
+
+      <div class="sec-tit">Come arrivare</div>
+      <div class="travel-row">${travs}</div>
+
+      <div class="sec-tit">Da vedere nei dintorni</div>
+      <div class="poi-row">${pois}</div>
+
+      <div class="gf">
+        <div style="font-size:13px;color:var(--mid)"><strong style="color:var(--dark)">${t.group.n} scacchist${t.group.n===1?'a':'i'}</strong> pianificano questo torneo</div>
+        <div style="display:flex;align-items:center;gap:11px">
+          <div class="av-row">${avs}</div>
+          <button class="btn btn-teal" onclick="nav('gruppi')">Unisciti al gruppo</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function sortT(v){
+  let s=[...T];
+  if(v==='date') s.sort((a,b)=>a.days-b.days);
+  if(v==='budget') s.sort((a,b)=>(a.entry+a.flight+a.hotel+a.meals)-(b.entry+b.flight+b.hotel+b.meals));
+  if(v==='prize') s.sort((a,b)=>b.prize-a.prize);
+  renderList(s);
+}
+
+function doSearch(){
+  const paese=document.getElementById('s-paese').value.toLowerCase().trim();
+  const budget=parseInt(document.getElementById('s-budget').value)||99999;
+  let f=T.filter(t=>{
+    const tot=t.entry+t.flight+t.hotel+t.meals;
+    const mp=!paese||t.country.toLowerCase().includes(paese)||t.city.toLowerCase().includes(paese);
+    return mp&&tot<=budget;
+  });
+  renderList(f.length>0?f:T);
+}
+
+// ─── RENDER GROUPS ──────────────────────────────────
+function renderGroups(){
+  const g=document.getElementById('groups-grid');
+  const avc=['av1','av2','av3','av4','av5'];
+  g.innerHTML=groups.map(gr=>`
+    <div class="gc">
+      <div class="gc-hdr">
+        <div><div class="gc-name">${gr.name}</div><div class="gc-loc">📍 ${gr.loc}</div></div>
+        <div class="gc-spots">${gr.spots} posti</div>
+      </div>
+      <div class="gc-body">
+        <div class="gc-members">${gr.members.slice(0,5).map((m,i)=>`<div class="av ${avc[i%5]}">${m}</div>`).join('')}</div>
+        <div class="gc-info">
+          <div>Partenza: <span>${gr.dep}</span></div>
+          <div>ELO medio: <span>${gr.elo}</span></div>
+          <div>Trasporto: <span>${gr.transport}</span></div>
+        </div>
+        <div class="gc-elo-bar">
+          <div class="elo-bar-label">Livello medio</div>
+          <div class="elo-bar-track"><div class="elo-bar-fill" style="width:${gr.elo_pct}%"></div></div>
+        </div>
+      </div>
+      <div class="gc-ftr">
+        <div class="gc-cost">A persona: <strong>${gr.budget}</strong></div>
+        <button class="btn btn-teal" onclick="openModal('modal-gruppo')">Unisciti</button>
+      </div>
+    </div>`).join('')+`
+    <div class="gc gc-new" onclick="openModal('modal-gruppo')">
+      <div style="font-size:28px">+</div>
+      <div style="font-size:13px;font-weight:500">Crea un gruppo</div>
+      <div style="font-size:12px;text-align:center;padding:0 16px">Hai trovato un torneo? Invita altri scacchisti.</div>
+    </div>`;
+}
+
+function renderAnnunci(){
+  document.getElementById('annunci-grid').innerHTML=annunci.map(a=>`
+    <div class="ann">
+      <div class="ann-type ${a.tipo}">${a.tit}</div>
+      <div class="ann-text">${a.txt}</div>
+      <div class="ann-meta"><span>${a.chi}</span><button class="btn-contact">Contatta</button></div>
+    </div>`).join('');
+}
+
+// ─── LEADERBOARD ──────────────────────────────────
+function renderLeaderboard(){
+  document.getElementById('lb-list').innerHTML=leaderboard.map((p,i)=>`
+    <div class="lb-item">
+      <div class="lb-rank${i<3?' top':''}">${i+1}</div>
+      <div class="av ${p.cls}" style="width:28px;height:28px;font-size:11px">${p.name.split(' ').map(x=>x[0]).join('')}</div>
+      <div class="lb-name">${p.name}</div>
+      <div class="lb-km">${p.flag}<strong>${p.km.toLocaleString()} km</strong></div>
+    </div>`).join('');
+}
+
+function renderDeadlines(){
+  const urgent=T.filter(t=>t.days<100).sort((a,b)=>a.days-b.days).slice(0,4);
+  document.getElementById('deadline-list').innerHTML=urgent.map(t=>`
+    <div style="padding:8px 0;border-bottom:1px solid var(--pale)">
+      <div style="font-size:13px;font-weight:500;color:var(--dark)">${t.flag} ${t.name}</div>
+      <div style="font-size:11px;color:${t.days<30?'var(--red)':'var(--muted)'};margin-top:2px">⏰ Iscrizione scade tra <strong>${t.days} giorni</strong></div>
+    </div>`).join('');
+}
+
+function renderDailyFact(){
+  const facts=[
+    "Magnus Carlsen ha raggiunto il rating più alto della storia: 2882 ELO nel 2014.",
+    "Il gioco degli scacchi ha più posizioni possibili degli atomi nell'universo osservabile.",
+    "Bobby Fischer imparò gli scacchi da solo a 6 anni leggendo le istruzioni della scatola.",
+    "La prima versione di computer che sconfisse un campione del mondo fu Deep Blue (IBM, 1997).",
+    "Il termine 'scaccomatto' viene dall'arabo 'Shah mat' — il re è morto.",
+    "La partita più lunga della storia durò 269 mosse (Nikolic vs Arsovic, 1989)."
+  ];
+  const f=facts[new Date().getDay()%facts.length];
+  document.getElementById('daily-fact').textContent=f;
+}
+
+// ─── NAVIGATION ──────────────────────────────────
+function nav(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  document.getElementById('nl-'+name)?.classList.add('active');
+  if(name==='home') document.getElementById('nl-home').classList.add('active');
+  window.scrollTo(0,0);
+}
+function showPage(n){nav(n);}
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+
+function toggleChip(el){ el.classList.toggle('on'); }
+
+// ─── INIT ────────────────────────────────────────
+renderList(T);
+renderGroups();
+renderAnnunci();
+renderLeaderboard();
+renderDeadlines();
+renderDailyFact();
+initBoard();
+</script>
+</body>
+</html>
